@@ -119,7 +119,7 @@ updateScrollUI();
 
 
 // ==========================================
-// SECTION NAVIGATION
+// SECTION NAVIGATION (SCROLL-SPY & INDICATOR)
 // ==========================================
 
 const sections = Array.from(
@@ -128,17 +128,16 @@ const sections = Array.from(
 
 const navSectionLinks = document.querySelectorAll('.nav-link');
 
-const visualIndex =
-  document.querySelector('#visual-index') ||
-  document.querySelector('.visual-index');
-
 let currentSectionIndex = 0;
+let isProgrammaticScroll = false;
+let scrollTimeoutId = null;
 
+const totalSectionsFormatted = String(sections.length || 7).padStart(2, '0');
 
-// Create floating page navigation
+// Create floating page navigation capsule (Fixed at bottom right)
 const pageNavigation = document.createElement('div');
-
 pageNavigation.className = 'page-navigation';
+pageNavigation.setAttribute('aria-label', 'Section navigation');
 
 pageNavigation.innerHTML = `
   <button
@@ -150,7 +149,7 @@ pageNavigation.innerHTML = `
     ←
   </button>
 
-  <span class="page-nav-counter">01 / 01</span>
+  <span class="page-nav-counter">01 / ${totalSectionsFormatted}</span>
 
   <button
     class="page-nav-button page-nav-next"
@@ -169,7 +168,7 @@ const nextButton = pageNavigation.querySelector('.page-nav-next');
 const pageCounter = pageNavigation.querySelector('.page-nav-counter');
 
 
-// Update active section and navigation state
+// Update floating capsule counter and active navbar link
 function updateSectionNavigation(index) {
   if (!sections.length) return;
 
@@ -179,10 +178,10 @@ function updateSectionNavigation(index) {
   );
 
   const currentSection = sections[currentSectionIndex];
-
   const currentNumber = String(currentSectionIndex + 1).padStart(2, '0');
   const totalNumber = String(sections.length).padStart(2, '0');
 
+  // Dynamically update the floating capsule counter
   pageCounter.textContent = `${currentNumber} / ${totalNumber}`;
 
   previousButton.disabled = currentSectionIndex === 0;
@@ -194,66 +193,108 @@ function updateSectionNavigation(index) {
       link.getAttribute('href') === `#${currentSection.id}`
     );
   });
-
-  if (visualIndex) {
-    visualIndex.textContent = `${currentNumber} / ${totalNumber}`;
-  }
 }
 
 
-// Previous section
+// Smooth scroll to a specific section with fixed header offset
+function scrollToSection(index) {
+  if (index < 0 || index >= sections.length) return;
+
+  isProgrammaticScroll = true;
+  clearTimeout(scrollTimeoutId);
+
+  const targetSection = sections[index];
+  const headerOffset = 76;
+  const targetTop = targetSection.getBoundingClientRect().top + window.scrollY;
+  const offsetPosition = Math.max(0, targetTop - (index === 0 ? 0 : headerOffset));
+
+  window.scrollTo({
+    top: offsetPosition,
+    behavior: 'smooth'
+  });
+
+  updateSectionNavigation(index);
+
+  scrollTimeoutId = setTimeout(() => {
+    isProgrammaticScroll = false;
+    detectActiveSection();
+  }, 800);
+}
+
+
+// Previous section button
 previousButton.addEventListener('click', () => {
   if (currentSectionIndex > 0) {
-    sections[currentSectionIndex - 1].scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
+    scrollToSection(currentSectionIndex - 1);
   }
 });
 
 
-// Next section
+// Next section button
 nextButton.addEventListener('click', () => {
   if (currentSectionIndex < sections.length - 1) {
-    sections[currentSectionIndex + 1].scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
+    scrollToSection(currentSectionIndex + 1);
   }
 });
 
 
-// Detect section currently visible
-if ('IntersectionObserver' in window && sections.length) {
-  const sectionObserver = new IntersectionObserver(
-    (entries) => {
-      const visibleEntries = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+// Detect section currently visible based on scroll position (Scroll-Spy)
+function detectActiveSection() {
+  if (!sections.length || isProgrammaticScroll) return;
 
-      if (visibleEntries.length) {
-        const activeSection = visibleEntries[0].target;
-        const activeIndex = sections.indexOf(activeSection);
+  const scrollY = window.scrollY;
+  const viewportHeight = window.innerHeight;
+  const documentHeight = document.documentElement.scrollHeight;
 
-        if (activeIndex !== -1) {
-          updateSectionNavigation(activeIndex);
-        }
-      }
-    },
-    {
-      rootMargin: '-20% 0px -55% 0px',
-      threshold: [0, 0.1, 0.25, 0.5, 0.75]
+  // 1. Bottom of page -> always highlight last section (07 - Contact)
+  if (scrollY + viewportHeight >= documentHeight - 50) {
+    updateSectionNavigation(sections.length - 1);
+    return;
+  }
+
+  // 2. Top of page -> always highlight first section (01 - Home)
+  if (scrollY < 80) {
+    updateSectionNavigation(0);
+    return;
+  }
+
+  // 3. Middle sections -> trigger based on marker position
+  const triggerPoint = scrollY + Math.min(260, viewportHeight * 0.35);
+
+  let activeIndex = 0;
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    const sectionTop = section.getBoundingClientRect().top + scrollY;
+
+    if (triggerPoint >= sectionTop) {
+      activeIndex = i;
+    } else {
+      break;
     }
-  );
+  }
 
-  sections.forEach((section) => {
-    sectionObserver.observe(section);
-  });
+  updateSectionNavigation(activeIndex);
 }
 
+
+// Listen to scroll with requestAnimationFrame throttle
+let scrollTicking = false;
+
+window.addEventListener('scroll', () => {
+  if (!scrollTicking) {
+    window.requestAnimationFrame(() => {
+      detectActiveSection();
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}, { passive: true });
+
+window.addEventListener('resize', detectActiveSection, { passive: true });
 
 // Initial navigation state
 updateSectionNavigation(0);
+detectActiveSection();
 
 
 // ==========================================
