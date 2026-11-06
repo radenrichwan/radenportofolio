@@ -2,58 +2,52 @@
 // MOBILE NAVIGATION
 // ==========================================
 
-const menuToggle = document.querySelector('.menu-toggle');
-const navLinks = document.querySelector('.nav-links');
-const navItems = document.querySelectorAll('.nav-link');
+const menuToggle = document.querySelector(".menu-toggle");
+const navLinks = document.querySelector(".nav-links");
+const navItems = document.querySelectorAll(".nav-link");
 
 if (menuToggle && navLinks) {
-  menuToggle.addEventListener('click', () => {
-    const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
+  menuToggle.addEventListener("click", () => {
+    const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
 
-    menuToggle.setAttribute('aria-expanded', String(!isOpen));
-    menuToggle.setAttribute(
-      'aria-label',
-      isOpen ? 'Open navigation' : 'Close navigation'
-    );
+    menuToggle.setAttribute("aria-expanded", String(!isOpen));
+    menuToggle.setAttribute("aria-label", isOpen ? "Open navigation" : "Close navigation");
 
-    navLinks.classList.toggle('open', !isOpen);
+    navLinks.classList.toggle("open", !isOpen);
   });
 
   navItems.forEach((link) => {
-    link.addEventListener('click', () => {
-      navLinks.classList.remove('open');
-      menuToggle.setAttribute('aria-expanded', 'false');
-      menuToggle.setAttribute('aria-label', 'Open navigation');
+    link.addEventListener("click", () => {
+      navLinks.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute("aria-label", "Open navigation");
     });
   });
 }
-
 
 // ==========================================
 // REVEAL ANIMATIONS
 // ==========================================
 
-const revealElements = document.querySelectorAll('.reveal');
+const revealElements = document.querySelectorAll(".reveal");
 
-const prefersReducedMotion = window.matchMedia(
-  '(prefers-reduced-motion: reduce)'
-).matches;
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+if (prefersReducedMotion || !("IntersectionObserver" in window)) {
   revealElements.forEach((element) => {
-    element.classList.add('visible');
+    element.classList.add("visible");
   });
 } else {
   const revealObserver = new IntersectionObserver(
     (entries, observer) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          entry.target.classList.add("visible");
           observer.unobserve(entry.target);
         }
       });
     },
-    { threshold: 0.12 }
+    { threshold: 0.12 },
   );
 
   revealElements.forEach((element) => {
@@ -61,83 +55,72 @@ if (prefersReducedMotion || !('IntersectionObserver' in window)) {
   });
 }
 
-
 // ==========================================
 // PROJECT CATEGORY FILTERS
 // ==========================================
 
-const filterButtons = document.querySelectorAll('.filter-button');
-const projectCards = document.querySelectorAll('.project-card');
+const filterButtons = document.querySelectorAll(".filter-button");
+const projectCards = document.querySelectorAll(".project-card");
 
 filterButtons.forEach((button) => {
-  button.addEventListener('click', () => {
+  button.addEventListener("click", () => {
     const selectedFilter = button.dataset.filter;
 
     filterButtons.forEach((item) => {
-      item.classList.toggle('active', item === button);
+      item.classList.toggle("active", item === button);
     });
 
     projectCards.forEach((card) => {
-      const categories = (card.dataset.category || '').split(' ');
-      const shouldShow =
-        selectedFilter === 'all' ||
-        categories.includes(selectedFilter);
+      const categories = (card.dataset.category || "").split(" ");
+      const shouldShow = selectedFilter === "all" || categories.includes(selectedFilter);
 
-      card.classList.toggle('is-hidden', !shouldShow);
+      card.classList.toggle("is-hidden", !shouldShow);
     });
   });
 });
-
 
 // ==========================================
 // HEADER BORDER & SCROLL PROGRESS
 // ==========================================
 
-const header = document.querySelector('.site-header');
-const progressBar = document.querySelector('.scroll-progress');
+const header = document.querySelector(".site-header");
+const progressBar = document.querySelector(".scroll-progress");
 
 function updateScrollUI() {
-  const scrollableHeight =
-    document.documentElement.scrollHeight - window.innerHeight;
+  const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-  const progress =
-    scrollableHeight > 0
-      ? (window.scrollY / scrollableHeight) * 100
-      : 0;
+  const progress = scrollableHeight > 0 ? (window.scrollY / scrollableHeight) * 100 : 0;
 
   if (progressBar) {
     progressBar.style.width = `${progress}%`;
   }
 
   if (header) {
-    header.classList.toggle('scrolled', window.scrollY > 20);
+    header.classList.toggle("scrolled", window.scrollY > 20);
   }
 }
 
-window.addEventListener('scroll', updateScrollUI, { passive: true });
+window.addEventListener("scroll", updateScrollUI, { passive: true });
 updateScrollUI();
-
 
 // ==========================================
 // SECTION NAVIGATION (SCROLL-SPY & INDICATOR)
 // ==========================================
 
-const sections = Array.from(
-  document.querySelectorAll('main section[id]')
-);
+const sections = Array.from(document.querySelectorAll("main section[id]"));
 
-const navSectionLinks = document.querySelectorAll('.nav-link');
+const navSectionLinks = document.querySelectorAll(".nav-link");
 
 let currentSectionIndex = 0;
 let isProgrammaticScroll = false;
 let scrollTimeoutId = null;
 
-const totalSectionsFormatted = String(sections.length || 7).padStart(2, '0');
+const totalSectionsFormatted = String(sections.length || 7).padStart(2, "0");
 
 // Create floating page navigation capsule (Fixed at bottom right)
-const pageNavigation = document.createElement('div');
-pageNavigation.className = 'page-navigation';
-pageNavigation.setAttribute('aria-label', 'Section navigation');
+const pageNavigation = document.createElement("div");
+pageNavigation.className = "page-navigation";
+pageNavigation.setAttribute("aria-label", "Section navigation");
 
 pageNavigation.innerHTML = `
   <button
@@ -163,23 +146,19 @@ pageNavigation.innerHTML = `
 
 document.body.appendChild(pageNavigation);
 
-const previousButton = pageNavigation.querySelector('.page-nav-prev');
-const nextButton = pageNavigation.querySelector('.page-nav-next');
-const pageCounter = pageNavigation.querySelector('.page-nav-counter');
-
+const previousButton = pageNavigation.querySelector(".page-nav-prev");
+const nextButton = pageNavigation.querySelector(".page-nav-next");
+const pageCounter = pageNavigation.querySelector(".page-nav-counter");
 
 // Update floating capsule counter and active navbar link
 function updateSectionNavigation(index) {
   if (!sections.length) return;
 
-  currentSectionIndex = Math.max(
-    0,
-    Math.min(index, sections.length - 1)
-  );
+  currentSectionIndex = Math.max(0, Math.min(index, sections.length - 1));
 
   const currentSection = sections[currentSectionIndex];
-  const currentNumber = String(currentSectionIndex + 1).padStart(2, '0');
-  const totalNumber = String(sections.length).padStart(2, '0');
+  const currentNumber = String(currentSectionIndex + 1).padStart(2, "0");
+  const totalNumber = String(sections.length).padStart(2, "0");
 
   // Dynamically update the floating capsule counter
   pageCounter.textContent = `${currentNumber} / ${totalNumber}`;
@@ -188,13 +167,9 @@ function updateSectionNavigation(index) {
   nextButton.disabled = currentSectionIndex === sections.length - 1;
 
   navSectionLinks.forEach((link) => {
-    link.classList.toggle(
-      'active',
-      link.getAttribute('href') === `#${currentSection.id}`
-    );
+    link.classList.toggle("active", link.getAttribute("href") === `#${currentSection.id}`);
   });
 }
-
 
 // Smooth scroll to a specific section with fixed header offset
 function scrollToSection(index) {
@@ -210,7 +185,7 @@ function scrollToSection(index) {
 
   window.scrollTo({
     top: offsetPosition,
-    behavior: 'smooth'
+    behavior: "smooth",
   });
 
   updateSectionNavigation(index);
@@ -221,22 +196,19 @@ function scrollToSection(index) {
   }, 800);
 }
 
-
 // Previous section button
-previousButton.addEventListener('click', () => {
+previousButton.addEventListener("click", () => {
   if (currentSectionIndex > 0) {
     scrollToSection(currentSectionIndex - 1);
   }
 });
 
-
 // Next section button
-nextButton.addEventListener('click', () => {
+nextButton.addEventListener("click", () => {
   if (currentSectionIndex < sections.length - 1) {
     scrollToSection(currentSectionIndex + 1);
   }
 });
-
 
 // Detect section currently visible based on scroll position (Scroll-Spy)
 function detectActiveSection() {
@@ -276,48 +248,49 @@ function detectActiveSection() {
   updateSectionNavigation(activeIndex);
 }
 
-
 // Listen to scroll with requestAnimationFrame throttle
 let scrollTicking = false;
 
-window.addEventListener('scroll', () => {
-  if (!scrollTicking) {
-    window.requestAnimationFrame(() => {
-      detectActiveSection();
-      scrollTicking = false;
-    });
-    scrollTicking = true;
-  }
-}, { passive: true });
+window.addEventListener(
+  "scroll",
+  () => {
+    if (!scrollTicking) {
+      window.requestAnimationFrame(() => {
+        detectActiveSection();
+        scrollTicking = false;
+      });
+      scrollTicking = true;
+    }
+  },
+  { passive: true },
+);
 
-window.addEventListener('resize', detectActiveSection, { passive: true });
+window.addEventListener("resize", detectActiveSection, { passive: true });
 
 // Initial navigation state
 updateSectionNavigation(0);
 detectActiveSection();
 
-
 // ==========================================
 // BACK TO TOP
 // ==========================================
 
-const backToTop = document.getElementById('back-to-top');
+const backToTop = document.getElementById("back-to-top");
 
 if (backToTop) {
-  backToTop.addEventListener('click', () => {
+  backToTop.addEventListener("click", () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   });
 }
-
 
 // ==========================================
 // DYNAMIC FOOTER YEAR
 // ==========================================
 
-const yearElement = document.getElementById('year');
+const yearElement = document.getElementById("year");
 
 if (yearElement) {
   yearElement.textContent = new Date().getFullYear();
